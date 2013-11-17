@@ -12,3 +12,9 @@ all: main.o versions.o update.o
 
 clean:
 	rm *.o minecraft_update
+
+install: all
+	install minecraft_update /usr/local/bin/minecraft_update
+
+deinstall:
+	rm /usr/local/bin/minecraft_update	

@@ -23,12 +23,10 @@ int get_current_version(char ** version) {
 		char *real_server_file = malloc(64);
 		char * start;
 		char * end;
-		/* char *version; */
 		size_t size;
 
 		size = readlink(SERVER_FILE, real_server_file, 64);
 		if (size == -1) {
-			/* version = malloc(3); */
 			*version = realloc(*version, 3);
 			switch (errno) {
 					case ENOENT: {
@@ -56,7 +54,6 @@ int get_current_version(char ** version) {
 		}
 		start = strchr(real_server_file, '.') + 1;
 		end = strrchr(start, '.');
-		/* version = malloc(end - start + 1); */
 		*version = realloc(*version, end - start + 1);
 		strncpy(*version, start, end - start);
 		return 0;

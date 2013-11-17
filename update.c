@@ -59,14 +59,14 @@ int update_minecraft(char *newversion) {
 		}
 
 		success = unlink("minecraft_server.jar");
-		if (success != 0 && success != ENOENT) {
-				fprintf(stderr, "Could not remove minecraft_server.jar: %s\n", strerror(success));
+		if (success != 0 && errno != ENOENT) {
+				fprintf(stderr, "Could not remove minecraft_server.jar: %s (%d)\n", strerror(errno), errno);
 				return -1;
 		}
 
 		success = symlink(filename, "minecraft_server.jar");
 		if (success != 0) {
-			fprintf(stderr, "Could not create link: %s\n", strerror(success));
+			fprintf(stderr, "Could not create link: %s\n", strerror(errno));
 			return -1;
 		}
 
