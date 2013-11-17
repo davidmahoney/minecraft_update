@@ -16,3 +16,7 @@
 *.exe
 *.out
 *.app
+
+# editor files
+*.swp
+*~

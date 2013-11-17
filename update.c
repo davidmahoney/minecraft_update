@@ -54,6 +54,9 @@ int update_minecraft(char *newversion) {
 		}
 
 		res = curl_easy_perform(curl);
+		if (res != CURLE_OK) {
+			fprintf(stderr, "Could not fetch new server file: %s\n", res);
+		}
 
 		success = unlink("minecraft_server.jar");
 		if (success != 0 && success != ENOENT) {
@@ -67,6 +70,13 @@ int update_minecraft(char *newversion) {
 			return -1;
 		}
 
+		curl_easy_cleanup(curl);
+
+		if (server_file.stream)
+				fclose(server_file.stream);
+
+		curl_global_cleanup();
+		
 		free(filename);
 		free(url);
 }

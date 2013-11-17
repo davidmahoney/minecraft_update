@@ -19,7 +19,7 @@ char * get_latest_version(char* input) {
 		return version;
 }
 
-int get_current_version(char * version) {
+int get_current_version(char ** version) {
 		char *real_server_file = malloc(64);
 		char * start;
 		char * end;
@@ -29,37 +29,36 @@ int get_current_version(char * version) {
 		size = readlink(SERVER_FILE, real_server_file, 64);
 		if (size == -1) {
 			/* version = malloc(3); */
-			version = realloc(version, 3);
+			*version = realloc(*version, 3);
 			switch (errno) {
 					case ENOENT: {
-										 strncpy(version, "0", 2);
+										 strncpy(*version, "0", 2);
 										 return 1;
 										 break;
 								 }
 					case EACCES: {
-										 strncpy(version, "-1", 3);
+										 strncpy(*version, "-1", 3);
 										 return 2;
 										 break;
 					}
 
 					case EINVAL: {
-										 strncpy(version, "-2", 3);
+										 strncpy(*version, "-2", 3);
 										 return 1;
 										 break;
 					}
 					default: {
-									 strncpy(version, "-9", 3);
+									 strncpy(*version, "-9", 3);
 									 return 9999;
 									 break;
 					}
 			}
-			return version;
 		}
 		start = strchr(real_server_file, '.') + 1;
 		end = strrchr(start, '.');
 		/* version = malloc(end - start + 1); */
-		version = realloc(version, end - start + 1);
-		strncpy(version, start, end - start);
+		*version = realloc(*version, end - start + 1);
+		strncpy(*version, start, end - start);
 		return 0;
 }
 

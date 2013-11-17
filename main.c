@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 
 	latest_ver = get_latest_version(chunk.memory);
 	printf("Latest available version is %s\n", latest_ver);
-	int success = get_current_version(current_ver);
+	int success = get_current_version(&current_ver);
 	if (success != 0 && success != 1) {
 			fprintf(stderr, "current version failed with %d\n", success);
 			return 1;
