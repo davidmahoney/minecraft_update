@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdlib.h>
 #include "curl/curl.h"
 #include "curl/easy.h"
 
@@ -55,7 +56,7 @@ int update_minecraft(char *newversion) {
 
 		res = curl_easy_perform(curl);
 		if (res != CURLE_OK) {
-			fprintf(stderr, "Could not fetch new server file: %s\n", res);
+			fprintf(stderr, "Could not fetch new server file: %d\n", res);
 		}
 
 		success = unlink("minecraft_server.jar");

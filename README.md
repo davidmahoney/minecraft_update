@@ -5,5 +5,4 @@ Utility to automatically update minecraft_server.jar to the latest release
 
 Building
 ----------------
-Requires libcurl and json-c. The makefile is for a BSD Make, so you're on your
-own with GNU Make :)
+Requires libcurl and json-c >= 0.11.
