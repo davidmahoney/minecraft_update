@@ -6,12 +6,10 @@
 #include "versions.h"
 #include "update.h"
 
-char* VERSIONS_URL = "https://s3.amazonaws.com/Minecraft.Download/versions/versions.json";
+const char* VERSIONS_URL = "https://s3.amazonaws.com/Minecraft.Download/versions/versions.json";
+const char* DOWNLOAD_DIR = "https://s3.amazonaws.com/Minecraft.Download/versions";
+const char *SERVER_FILE = "minecraft_server.";
 
-struct MemoryStruct {
-		char *memory;
-		size_t size;
-};
 
 static size_t read_version_callback(void *contents, size_t size, size_t nmemb, void *userdata) {
 		size_t realsize = size * nmemb;
@@ -31,39 +29,12 @@ static size_t read_version_callback(void *contents, size_t size, size_t nmemb, v
 }
 
 int main(int argc, char *argv[]) {
-	CURL *curl;
-	CURLcode res;
-	struct MemoryStruct chunk;
 	char *current_ver = NULL;
 	char *latest_ver = NULL;
-	chunk.memory = malloc(1);
-	chunk.size = 0;
+	char *download_url;
 
-	curl_global_init(CURL_GLOBAL_ALL);
 
-	curl = curl_easy_init();
-	if (curl) {
-			curl_easy_setopt(curl, CURLOPT_URL, VERSIONS_URL);
-			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-							&read_version_callback);
-			curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
-			curl_easy_setopt(curl, CURLOPT_USERAGENT,
-							"libcurl-agent/1.0");
-	}
-	else {
-		fprintf(stderr, "failed to initialize curl.\n");
-		return 1;
-	}
-	
-	res = curl_easy_perform(curl);
-
-	if (res != CURLE_OK) {
-			fprintf(stderr, "curl_easy_perform(): failed %s\n",
-			curl_easy_strerror(res));
-			return 2;
-	}
-
-	latest_ver = get_latest_version(chunk.memory);
+	latest_ver = get_latest_version(VERSIONS_URL);
 	printf("Latest available version is %s\n", latest_ver);
 	int success = get_current_version(&current_ver);
 	if (success != 0 && success != 1) {
@@ -73,13 +44,24 @@ int main(int argc, char *argv[]) {
 
 	printf("Current version is %s\n", current_ver);
 
-	if (chunk.memory)
-			free(chunk.memory);
-	curl_easy_cleanup(curl);
 
 	if (current_ver == NULL || strcmp(latest_ver,current_ver) > 0) {
 			/* should update */
-		success = update_minecraft(latest_ver);
+
+			asprintf(
+							&download_url,
+							"%s/%s/%s%s.jar",
+							DOWNLOAD_DIR, 
+							latest_ver, 
+							SERVER_FILE, 
+							latest_ver);
+		
+		success = update_minecraft(
+				download_url + strlen(DOWNLOAD_DIR) + strlen(latest_ver) + 2, 
+				download_url);
+		if (success != 0) {
+				fprintf(stderr, "Failed to update minecraft server: error %d\n", success);
+		}
 	}
 	free(latest_ver);
 	free(current_ver);

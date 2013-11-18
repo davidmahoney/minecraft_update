@@ -1,12 +1,38 @@
 #include "json/json.h"
+#include "curl/curl.h"
+#include "curl/easy.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 
-const char *SERVER_FILE = "minecraft_server.jar";
+const char *SERVER_LINK = "minecraft_server.jar";
 
-char * get_latest_version(char* input) {
+struct MemoryStruct {
+		char *memory;
+		size_t size;
+};
+
+
+static size_t read_version_callback(void *contents, size_t size, size_t nmemb, void *userdata) {
+		size_t realsize = size * nmemb;
+		struct MemoryStruct *mem = (struct MemoryStruct *)userdata;
+
+		mem->memory = realloc(mem->memory, mem->size + realsize + 1);
+		if (mem->memory == NULL) {
+				/* out of memory */
+				printf("not enough memory (realloc returned NUL\n");
+				return 0;
+				}
+		memcpy(&(mem->memory[mem->size]), contents, realsize);
+		mem->size += realsize;
+		mem->memory[mem->size] = 0;
+
+		return realsize;
+}
+
+
+char * parse_version(char* input) {
 		json_object *jobj;
 		char * version = NULL;
 		int version_len;
@@ -19,13 +45,55 @@ char * get_latest_version(char* input) {
 		return version;
 }
 
+
+
+char *get_latest_version(const char *url) {
+	CURL *curl;
+	CURLcode res;
+	struct MemoryStruct chunk;
+	char *latest_ver = NULL;
+	chunk.memory = malloc(1);
+	chunk.size = 0;
+
+	curl_global_init(CURL_GLOBAL_ALL);
+
+	curl = curl_easy_init();
+	if (curl) {
+		curl_easy_setopt(curl, CURLOPT_URL, url);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+						&read_version_callback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+		curl_easy_setopt(curl, CURLOPT_USERAGENT,
+						"libcurl-agent/1.0");
+	}
+	else {
+		fprintf(stderr, "failed to initialize curl.\n");
+		return NULL;
+	}
+
+	res = curl_easy_perform(curl);
+
+	if (res != CURLE_OK) {
+		fprintf(stderr, "curl_easy_perform(): failed %s\n",
+						curl_easy_strerror(res));
+		return NULL;
+	}
+
+	latest_ver = parse_version(chunk.memory);
+	if (chunk.memory)
+			free(chunk.memory);
+	curl_easy_cleanup(curl);
+
+	return latest_ver;
+}
+
 int get_current_version(char ** version) {
 		char *real_server_file = malloc(64);
 		char * start;
 		char * end;
 		size_t size;
 
-		size = readlink(SERVER_FILE, real_server_file, 64);
+		size = readlink(SERVER_LINK, real_server_file, 64);
 		if (size == -1) {
 			*version = realloc(*version, 3);
 			switch (errno) {
@@ -54,8 +122,14 @@ int get_current_version(char ** version) {
 		}
 		start = strchr(real_server_file, '.') + 1;
 		end = strrchr(start, '.');
-		*version = realloc(*version, end - start + 1);
-		strncpy(*version, start, end - start);
+		if (start == NULL || end == NULL || end - start == 0) {
+				*version = realloc(*version, 2);
+				strncpy(*version, "0", 2);
+		}
+		else {
+				*version = realloc(*version, end - start + 1);
+				strncpy(*version, start, end - start);
+		}
 		return 0;
 }
 

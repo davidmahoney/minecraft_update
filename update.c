@@ -23,31 +23,29 @@ static size_t write_server_file(void *contents, size_t size, size_t nmemb, void 
 }
 
 
-int update_minecraft(char *newversion) {
-		char * url;
+int update_minecraft(char *server_filename, char *download_url) {
 		char *filename;
 		int success;
 		CURL *curl;
 		CURLcode res;
+		char *curl_errorbuf = malloc(CURL_ERROR_SIZE);
 
 		curl_global_init(CURL_GLOBAL_ALL);
 		curl = curl_easy_init();
 
-		asprintf(&url, "https://s3.amazonaws.com/Minecraft.Download/versions/%s/minecraft_server.%s.jar", newversion, newversion);
-		asprintf(&filename, "minecraft_server.%s.jar", newversion);
-
 		struct HttpFile server_file = {
-				filename,
+				server_filename,
 				NULL
 		};
 
 		if (curl) {
-				curl_easy_setopt(curl, CURLOPT_URL, url );
+				curl_easy_setopt(curl, CURLOPT_URL, download_url );
 				curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
 								&write_server_file);
 				curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&server_file);
 				curl_easy_setopt(curl, CURLOPT_USERAGENT,
 								"libcurl-agent/1.0");
+				curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errorbuf);
 		}
 		else {
 				fprintf(stderr, "failed to initialize curl.\n");
@@ -65,7 +63,7 @@ int update_minecraft(char *newversion) {
 				return -1;
 		}
 
-		success = symlink(filename, "minecraft_server.jar");
+		success = symlink(server_filename, "minecraft_server.jar");
 		if (success != 0) {
 			fprintf(stderr, "Could not create link: %s\n", strerror(errno));
 			return -1;
@@ -77,7 +75,5 @@ int update_minecraft(char *newversion) {
 				fclose(server_file.stream);
 
 		curl_global_cleanup();
-		
-		free(filename);
-		free(url);
+		return 0;
 }
