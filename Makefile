@@ -21,6 +21,9 @@ clean:
 
 install: all
 	install minecraft_update /usr/local/bin/minecraft_update
+	install -g 0 -o 0 -m 0644 man/minecraft_update.1 /usr/local/man/man1/
+	gzip /usr/local/man/man1/minecraft_update.1
 
 deinstall:
 	rm /usr/local/bin/minecraft_update	
+	rm /usr/local/man/man1/minecraft_update.1.gz
