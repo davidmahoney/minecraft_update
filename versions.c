@@ -120,8 +120,11 @@ int get_current_version(char ** version) {
 					}
 			}
 		}
+		/* readlink doesn't append the null byte to the end of the string */
+		real_server_file[size + 1] = '\0';
 		start = strchr(real_server_file, '.') + 1;
 		end = strrchr(start, '.');
+		/* if not enough dots (.) are found return version 0 */
 		if (start == NULL || end == NULL || end - start == 0) {
 				*version = realloc(*version, 2);
 				strncpy(*version, "0", 2);
