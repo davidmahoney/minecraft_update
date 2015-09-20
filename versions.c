@@ -1,10 +1,11 @@
-#include "json/json.h"
+#include "json-c/json.h"
 #include "curl/curl.h"
 #include "curl/easy.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdbool.h>
 
 const char *SERVER_LINK = "minecraft_server.jar";
 
@@ -32,17 +33,21 @@ static size_t read_version_callback(void *contents, size_t size, size_t nmemb, v
 }
 
 
-char * parse_version(char* input) {
+bool parse_version(char* input, char** output) {
 		json_object *jobj;
 		char * version = NULL;
+		bool ok;
 		int version_len;
 		jobj = json_tokener_parse(input);
-		jobj = json_object_object_get(jobj, "latest");
-		jobj = json_object_object_get(jobj, "release");
+		if (!json_object_object_get_ex(jobj, "latest", &jobj))
+			return false;	
+		if (!json_object_object_get_ex(jobj, "release", &jobj))
+			return false;
 		version_len = json_object_get_string_len(jobj);
-		version = realloc(version, version_len);
-		memcpy(version, json_object_get_string(jobj), version_len);
-		return version;
+		version = json_object_get_string(jobj);
+		mersion = realloc(version, version_len);
+		*output = version;
+		return true;
 }
 
 
@@ -79,7 +84,11 @@ char *get_latest_version(const char *url) {
 		return NULL;
 	}
 
-	latest_ver = parse_version(chunk.memory);
+	if(!parse_version(chunk.memory, &latest_ver)) {
+		fprintf(stderr, 
+				"Tried to get the lasest version, but didn't understand the server's reply.");
+		return NULL;
+	}
 	if (chunk.memory)
 			free(chunk.memory);
 	curl_easy_cleanup(curl);
