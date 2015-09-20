@@ -35,18 +35,24 @@ static size_t read_version_callback(void *contents, size_t size, size_t nmemb, v
 
 bool parse_version(char* input, char** output) {
 		json_object *jobj;
+		json_object *latest_obj;
+		json_object *release_obj;
 		char * version = NULL;
 		bool ok;
 		int version_len;
 		jobj = json_tokener_parse(input);
-		if (!json_object_object_get_ex(jobj, "latest", &jobj))
+		if (!json_object_object_get_ex(jobj, "latest", &latest_obj))
 			return false;	
-		if (!json_object_object_get_ex(jobj, "release", &jobj))
+		if (!json_object_object_get_ex(latest_obj, "release", &release_obj))
 			return false;
-		version_len = json_object_get_string_len(jobj);
-		version = json_object_get_string(jobj);
-		mersion = realloc(version, version_len);
+		version_len = json_object_get_string_len(release_obj);
+		version = realloc(version, version_len);
+		version = memcpy(
+				version, json_object_get_string(release_obj), version_len);
 		*output = version;
+		json_object_put(release_obj);
+		json_object_put(latest_obj);
+		json_object_put(jobj);
 		return true;
 }
 
