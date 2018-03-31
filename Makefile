@@ -5,7 +5,7 @@ DEPS = versions.h
 OBJ = main.o versions.o update.o
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-	LDFLAGS := -L/usr/lib/x86_64-linux-gnu -lc -lcurl -ljson
+	LDFLAGS := -L/usr/lib/x86_64-linux-gnu -lc -lcurl -ljson-c
 	CFLAGS :=
 endif
 

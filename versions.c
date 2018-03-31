@@ -1,8 +1,4 @@
-#ifdef linux
-#include "json/json.h"
-#else
 #include "json-c/json.h"
-#endif
 #include "curl/curl.h"
 #include "curl/easy.h"
 #include <stdio.h>
