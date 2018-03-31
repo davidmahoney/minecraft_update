@@ -170,7 +170,11 @@ int compare_versions(const char *version1, const char *version2) {
 	version_number2 = strtol(version2, &end2, 10);
 	printf("version2: %lu\n", version_number2);
 
+<<<<<<< HEAD
 	if (*end1 != '\0' && *end2 != '\0' && version_number1 == version_number2) {
+=======
+	if (version_number1 == version_number2) {
+>>>>>>> 02798350e69963ddca291a904521602f09ecc50a
 		return compare_versions (++end1, ++end2);
 	}
 
