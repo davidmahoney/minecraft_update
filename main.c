@@ -25,7 +25,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	printf("Current version is %s\n", current_ver);
-	printf ("compare: %i\n", compare_versions(latest_ver, current_ver));
 
 	if (current_ver == NULL || compare_versions(latest_ver, current_ver) > 0 ) { 
 			/* should update */
