@@ -16,7 +16,9 @@
 *.exe
 *.out
 *.app
+minecraft_update
 
 # editor files
 *.swp
 *~
+tags

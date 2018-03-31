@@ -10,4 +10,6 @@ struct MemoryStruct {
 char * get_latest_version(const char* url);
 int get_current_version(char **version);
 char * parse_version(char *input);
+int compare_versions(const char *version1, const char* version2);
+
 

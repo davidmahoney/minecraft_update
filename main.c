@@ -10,24 +10,6 @@ const char* VERSIONS_URL = "https://s3.amazonaws.com/Minecraft.Download/versions
 const char* DOWNLOAD_DIR = "https://s3.amazonaws.com/Minecraft.Download/versions";
 const char *SERVER_FILE = "minecraft_server.";
 
-
-static size_t read_version_callback(void *contents, size_t size, size_t nmemb, void *userdata) {
-		size_t realsize = size * nmemb;
-		struct MemoryStruct *mem = (struct MemoryStruct *)userdata;
-
-		mem->memory = realloc(mem->memory, mem->size + realsize + 1);
-		if (mem->memory == NULL) {
-				/* out of memory */
-				printf("not enough memory (realloc returned NUL\n");
-				return 0;
-				}
-		memcpy(&(mem->memory[mem->size]), contents, realsize);
-		mem->size += realsize;
-		mem->memory[mem->size] = 0;
-
-		return realsize;
-}
-
 int main(int argc, char *argv[]) {
 	char *current_ver = NULL;
 	char *latest_ver = NULL;
@@ -43,9 +25,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	printf("Current version is %s\n", current_ver);
+	printf ("compare: %i\n", compare_versions(latest_ver, current_ver));
 
-
-	if (current_ver == NULL || strcmp(latest_ver,current_ver) > 0) {
+	if (current_ver == NULL || compare_versions(latest_ver, current_ver) > 0 ) { 
 			/* should update */
 
 			asprintf(
