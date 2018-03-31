@@ -1,4 +1,8 @@
+#ifdef linux
+#include "json/json.h"
+#else
 #include "json-c/json.h"
+#endif
 #include "curl/curl.h"
 #include "curl/easy.h"
 #include <stdio.h>
@@ -38,7 +42,6 @@ bool parse_version(char* input, char** output) {
 		json_object *latest_obj;
 		json_object *release_obj;
 		char * version = NULL;
-		bool ok;
 		int version_len;
 		jobj = json_tokener_parse(input);
 		if (!json_object_object_get_ex(jobj, "latest", &latest_obj))
@@ -151,3 +154,29 @@ int get_current_version(char ** version) {
 		return 0;
 }
 
+int compare_versions(const char *version1, const char *version2) {
+	long version_number1;
+	long version_number2;
+
+	char *end1;
+	char *end2;
+
+	if (version1 == NULL || version2 == NULL) {
+		return 0;
+	}
+
+	version_number1 = strtol(version1, &end1, 10);
+	printf("version1: %lu\n",version_number1);
+	version_number2 = strtol(version2, &end2, 10);
+	printf("version2: %lu\n", version_number2);
+
+	if (version_number1 == version_number2) {
+		return compare_versions (++end1, ++end2);
+	}
+
+	if (version_number1 > version_number2) {
+		return 1;
+	}
+
+	return -1;
+}

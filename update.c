@@ -24,7 +24,6 @@ static size_t write_server_file(void *contents, size_t size, size_t nmemb, void 
 
 
 int update_minecraft(char *server_filename, char *download_url) {
-		char *filename;
 		int success;
 		CURL *curl;
 		CURLcode res;
