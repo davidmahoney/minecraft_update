@@ -2,14 +2,14 @@ static const char * ENOFILE = "0";
 static const char * ENOTLINK = "-2";
 static const char * ENOREAD = "-1";
 
-struct MemoryStruct {
-		char *memory;
-		size_t size;
-};
+typedef struct {
+	char *id;
+	char *metadata_url;
+	char *download_url;
+} Version;
 
-char * get_latest_version(const char* url);
+Version get_latest_version(const char* url);
 int get_current_version(char **version);
-char * parse_version(char *input);
 int compare_versions(const char *version1, const char* version2);
 
 
