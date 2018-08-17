@@ -1,8 +1,4 @@
-#ifdef linux
-#include "json/json.h"
-#else
 #include "json-c/json.h"
-#endif
 #include "curl/curl.h"
 #include "curl/easy.h"
 #include <stdio.h>
@@ -10,6 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdbool.h>
+#include "versions.h"
 
 const char *SERVER_LINK = "minecraft_server.jar";
 
@@ -37,10 +34,12 @@ static size_t read_version_callback(void *contents, size_t size, size_t nmemb, v
 }
 
 
-bool parse_version(char* input, char** output) {
+bool parse_version(char* input, Version *vers) {
 		json_object *jobj;
 		json_object *latest_obj;
 		json_object *release_obj;
+		json_object *url_obj;
+		json_object *versions_obj;
 		char * version = NULL;
 		int version_len;
 		jobj = json_tokener_parse(input);
@@ -52,20 +51,63 @@ bool parse_version(char* input, char** output) {
 		version = realloc(version, version_len);
 		version = memcpy(
 				version, json_object_get_string(release_obj), version_len);
-		*output = version;
+		vers->id = version;
+
+		if (!json_object_object_get_ex(jobj, "versions", &versions_obj))
+			return false;
+
+		for (size_t i=0; i < json_object_array_length(versions_obj); i++) {
+			latest_obj = json_object_array_get_idx(versions_obj, i);
+			json_object_object_get_ex(latest_obj, "id", &release_obj);
+			if (strcmp(vers->id, json_object_get_string(release_obj)) == 0) {
+				version_len = json_object_get_string_len(release_obj);
+				char *url = NULL;
+				size_t url_len;
+				if (!json_object_object_get_ex(latest_obj, "url", &url_obj))
+					return false;
+				url_len = json_object_get_string_len(url_obj);
+				url = realloc(url, url_len);
+				memcpy(url, json_object_get_string(url_obj), url_len);
+				vers->metadata_url = url;
+				break;
+			}
+		}
 		json_object_put(release_obj);
 		json_object_put(latest_obj);
 		json_object_put(jobj);
 		return true;
 }
 
+bool parse_version_metadata(char * input, char **download_url) {
+	json_object *jobj;
+	json_object *downloads_obj;
+	json_object *server_obj;
+	json_object *url_obj;
+	size_t url_len;
+	
+	jobj = json_tokener_parse(input);
+	if (!json_object_object_get_ex(jobj, "downloads", &downloads_obj)) {
+		return false;
+	}
+	if (!json_object_object_get_ex(downloads_obj, "server", &server_obj)) {
+		return false;
+	}
+	if (!json_object_object_get_ex(server_obj, "url", &url_obj)) {
+		return  false;
+	}
+	url_len = json_object_get_string_len(url_obj);
+	*download_url = realloc(*download_url, url_len);
+	char *url = (char *)malloc(url_len);
+	memcpy(url, json_object_get_string(url_obj), url_len);
+	*download_url = url;
+	return true;
+}
 
-
-char *get_latest_version(const char *url) {
+char * get_download_url(const char * url, const char * version) {
+	char * download_url = NULL;
 	CURL *curl;
 	CURLcode res;
 	struct MemoryStruct chunk;
-	char *latest_ver = NULL;
 	chunk.memory = malloc(1);
 	chunk.size = 0;
 
@@ -82,7 +124,7 @@ char *get_latest_version(const char *url) {
 	}
 	else {
 		fprintf(stderr, "failed to initialize curl.\n");
-		return NULL;
+		return download_url;
 	}
 
 	res = curl_easy_perform(curl);
@@ -90,19 +132,63 @@ char *get_latest_version(const char *url) {
 	if (res != CURLE_OK) {
 		fprintf(stderr, "curl_easy_perform(): failed %s\n",
 						curl_easy_strerror(res));
-		return NULL;
+		return download_url;
 	}
 
-	if(!parse_version(chunk.memory, &latest_ver)) {
+	parse_version_metadata(chunk.memory, &download_url);
+
+	if (chunk.memory)
+			free(chunk.memory);
+	curl_easy_cleanup(curl);
+	return download_url;
+}
+
+
+
+Version get_latest_version(const char *url) {
+	CURL *curl;
+	CURLcode res;
+	struct MemoryStruct chunk;
+	Version latest_version;
+	char *latest_ver;
+	chunk.memory = malloc(1);
+	chunk.size = 0;
+
+	curl_global_init(CURL_GLOBAL_ALL);
+
+	curl = curl_easy_init();
+	if (curl) {
+		curl_easy_setopt(curl, CURLOPT_URL, url);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+						&read_version_callback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+		curl_easy_setopt(curl, CURLOPT_USERAGENT,
+						"libcurl-agent/1.0");
+	}
+	else {
+		fprintf(stderr, "failed to initialize curl.\n");
+		return latest_version;
+	}
+
+	res = curl_easy_perform(curl);
+
+	if (res != CURLE_OK) {
+		fprintf(stderr, "curl_easy_perform(): failed %s\n",
+						curl_easy_strerror(res));
+		return latest_version;
+	}
+
+	if(!parse_version(chunk.memory, &latest_version)) {
 		fprintf(stderr, 
-				"Tried to get the lasest version, but didn't understand the server's reply.");
-		return NULL;
+				"Tried to get the lastest version, but didn't understand the server's reply.");
+		return latest_version;
 	}
 	if (chunk.memory)
 			free(chunk.memory);
 	curl_easy_cleanup(curl);
-
-	return latest_ver;
+	
+	latest_version.download_url = get_download_url(latest_version.metadata_url, latest_version.id);
+	return latest_version;
 }
 
 int get_current_version(char ** version) {
