@@ -40,25 +40,41 @@ bool parse_version(char* input, Version *vers) {
 		json_object *release_obj;
 		json_object *url_obj;
 		json_object *versions_obj;
+		json_tokener *tok = json_tokener_new();
+		enum json_tokener_error err;
 		char * version = NULL;
 		size_t version_len;
-		jobj = json_tokener_parse(input);
-		if (!json_object_object_get_ex(jobj, "latest", &latest_obj))
-			return false;	
-		if (!json_object_object_get_ex(latest_obj, "release", &release_obj))
+		jobj = json_tokener_parse_ex(tok, input, strlen(input));
+		err = json_tokener_get_error(tok);
+		if (err != json_tokener_success) {
+			fprintf(stderr, "Error: %s\n", json_tokener_error_desc(err));
 			return false;
-		version_len = json_object_get_string_len(release_obj);
+		}
+		if (!json_object_object_get_ex(jobj, "latest", &latest_obj)) {
+			json_object_put(jobj);
+			return false;	
+		}
+		if (!json_object_object_get_ex(latest_obj, "release", &release_obj)) {
+			json_object_put(jobj);
+			json_object_put(latest_obj);
+			return false;
+		}
+		version_len = json_object_get_string_len(release_obj) + 1;
 		version = realloc(version, version_len);
 		version = memcpy(
 				version, json_object_get_string(release_obj), version_len);
-		fprintf(stdout, "version: %s, len: %lu, %lu\n", version, version_len, strlen(version));
 		vers->id = version;
 
-		if (!json_object_object_get_ex(jobj, "versions", &versions_obj))
+		if (!json_object_object_get_ex(jobj, "versions", &versions_obj)) {
+			json_object_put(jobj);
+			json_object_put(latest_obj);
+			json_object_put(release_obj);
 			return false;
+		}
 
 		for (size_t i=0; i < json_object_array_length(versions_obj); i++) {
 			latest_obj = json_object_array_get_idx(versions_obj, i);
+			json_object_put(release_obj);
 			json_object_object_get_ex(latest_obj, "id", &release_obj);
 			if (strcmp(vers->id, json_object_get_string(release_obj)) == 0) {
 				version_len = json_object_get_string_len(release_obj);
@@ -73,6 +89,7 @@ bool parse_version(char* input, Version *vers) {
 				break;
 			}
 		}
+		json_object_put(versions_obj);
 		json_object_put(release_obj);
 		json_object_put(latest_obj);
 		json_object_put(jobj);
@@ -96,7 +113,7 @@ bool parse_version_metadata(char * input, char **download_url) {
 	if (!json_object_object_get_ex(server_obj, "url", &url_obj)) {
 		return  false;
 	}
-	url_len = json_object_get_string_len(url_obj);
+	url_len = json_object_get_string_len(url_obj) + 1;
 	*download_url = realloc(*download_url, url_len);
 	char *url = (char *)malloc(url_len);
 	memcpy(url, json_object_get_string(url_obj), url_len);
@@ -140,7 +157,6 @@ char * get_download_url(const char * url, const char * version) {
 		puts("Error: Failed to parse version metadata\n");
 		return NULL;
 	}
-	fprintf(stdout, "download url: %s\n", download_url);
 
 	if (chunk.memory)
 			free(chunk.memory);
@@ -154,8 +170,7 @@ Version get_latest_version(const char *url) {
 	CURL *curl;
 	CURLcode res;
 	struct MemoryStruct chunk;
-	Version latest_version;
-	char *latest_ver;
+	Version latest_version = { };
 	chunk.memory = malloc(1);
 	chunk.size = 0;
 
@@ -207,18 +222,18 @@ int get_current_version(char ** version) {
 			*version = realloc(*version, 3);
 			switch (errno) {
 					case ENOENT: {
-										 strncpy(*version, "0", 2);
+										 strncpy(*version, ENOFILE, 2);
 										 return 1;
 										 break;
 								 }
 					case EACCES: {
-										 strncpy(*version, "-1", 3);
+										 strncpy(*version, ENOREAD, 3);
 										 return 2;
 										 break;
 					}
 
 					case EINVAL: {
-										 strncpy(*version, "-2", 3);
+										 strncpy(*version, ENOTLINK, 3);
 										 return 1;
 										 break;
 					}
