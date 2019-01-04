@@ -10,11 +10,31 @@
 #include "versions.h"
 #include "update.h"
 
+const char* version = "1.2";
 const char* VERSIONS_URL = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
 const char* DOWNLOAD_DIR = "https://s3.amazonaws.com/Minecraft.Download/versions";
 const char *SERVER_FILE = "minecraft_server.";
+void print_usage(char *progname);
+void print_version();
 
 int main(int argc, char *argv[]) {
+	if (argc > 1) {
+		for (int i = 1; i < argc; ++i) {
+			if (argv[i][0] != '-') {
+				print_usage(argv[0]);
+				return 1;
+			}
+			for (int j = 1; j < strlen(argv[i]); ++j) {
+				switch (argv[i][j]) {
+					case 'v': print_version(); break;
+					case 'h': print_usage(argv[0]); break;
+					default: print_usage(argv[0]); return 1;
+				}
+			}
+		}
+		return 0;
+	}
+
 	char *current_ver = NULL;
 	Version latest_ver;
 
@@ -32,13 +52,6 @@ int main(int argc, char *argv[]) {
 			/* should update */
 		char * filename = NULL;
 		asprintf(&filename, "%s%s.jar", SERVER_FILE, latest_ver.id);
-			/* asprintf(
-							&latest_ver.download_url,
-							"%s/%s/%s%s.jar",
-							DOWNLOAD_DIR, 
-							latest_ver.id, 
-							SERVER_FILE, 
-							latest_ver.id); */
 		
 		if (latest_ver.download_url == NULL) {
 			puts("No download URL!\n");
@@ -54,4 +67,12 @@ int main(int argc, char *argv[]) {
 	free(latest_ver.download_url);
 	free(current_ver);
 	return 0;
+}
+
+void print_usage(char *name) {
+	fprintf(stderr, "Usage: %s [-hv]\n", name);
+}
+
+void print_version() {
+	fprintf(stdout, "Version %s\n", version);
 }
