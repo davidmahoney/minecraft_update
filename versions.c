@@ -41,7 +41,7 @@ bool parse_version(char* input, Version *vers) {
 		json_object *url_obj;
 		json_object *versions_obj;
 		char * version = NULL;
-		int version_len;
+		size_t version_len;
 		jobj = json_tokener_parse(input);
 		if (!json_object_object_get_ex(jobj, "latest", &latest_obj))
 			return false;	
@@ -51,6 +51,7 @@ bool parse_version(char* input, Version *vers) {
 		version = realloc(version, version_len);
 		version = memcpy(
 				version, json_object_get_string(release_obj), version_len);
+		fprintf(stdout, "version: %s, len: %lu, %lu\n", version, version_len, strlen(version));
 		vers->id = version;
 
 		if (!json_object_object_get_ex(jobj, "versions", &versions_obj))
@@ -65,7 +66,7 @@ bool parse_version(char* input, Version *vers) {
 				size_t url_len;
 				if (!json_object_object_get_ex(latest_obj, "url", &url_obj))
 					return false;
-				url_len = json_object_get_string_len(url_obj);
+				url_len = json_object_get_string_len(url_obj) + 1;
 				url = realloc(url, url_len);
 				memcpy(url, json_object_get_string(url_obj), url_len);
 				vers->metadata_url = url;
@@ -135,7 +136,11 @@ char * get_download_url(const char * url, const char * version) {
 		return download_url;
 	}
 
-	parse_version_metadata(chunk.memory, &download_url);
+	if (!parse_version_metadata(chunk.memory, &download_url)) {
+		puts("Error: Failed to parse version metadata\n");
+		return NULL;
+	}
+	fprintf(stdout, "download url: %s\n", download_url);
 
 	if (chunk.memory)
 			free(chunk.memory);

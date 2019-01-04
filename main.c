@@ -40,6 +40,9 @@ int main(int argc, char *argv[]) {
 							SERVER_FILE, 
 							latest_ver.id); */
 		
+		if (latest_ver.download_url == NULL) {
+			puts("No download URL!\n");
+		}
 		success = update_minecraft(filename,
 			latest_ver.download_url);
 		if (success != 0) {

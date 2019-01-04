@@ -54,6 +54,8 @@ int update_minecraft(char *server_filename, char *download_url) {
 		res = curl_easy_perform(curl);
 		if (res != CURLE_OK) {
 			fprintf(stderr, "Could not fetch new server file: %d\n", res);
+			curl_global_cleanup();
+			return -1;
 		}
 
 		success = unlink("minecraft_server.jar");
