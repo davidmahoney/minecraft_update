@@ -1,5 +1,5 @@
 CC=cc
-CFLAGS=-I/usr/local/include -g -Wall
+CFLAGS=-I/usr/local/include -g -Wall -O1
 LDFLAGS=-L/usr/local/lib -lc -lcurl -ljson-c
 DEPS = versions.h
 OBJ = main.o versions.o update.o
