@@ -1,9 +1,9 @@
 /* The file was not found */
-static const char * ENOFILE = "0";
+static const char ENOFILE[] = "0";
 /* The file was not a symlink */
-static const char * ENOTLINK = "-2";
+static const char ENOTLINK[] = "-2";
 /* The file was there, but could not be read */
-static const char * ENOREAD = "-1";
+static const char ENOREAD[] = "-1";
 
 /*
 Holds the data necessary to get the latest version of the server file.
