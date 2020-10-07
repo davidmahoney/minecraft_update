@@ -56,7 +56,6 @@ bool parse_version(char* input, Version *vers) {
 		}
 		if (!json_object_object_get_ex(latest_obj, "release", &release_obj)) {
 			json_object_put(jobj);
-			json_object_put(latest_obj);
 			return false;
 		}
 		version_len = json_object_get_string_len(release_obj) + 1;
@@ -67,14 +66,11 @@ bool parse_version(char* input, Version *vers) {
 
 		if (!json_object_object_get_ex(jobj, "versions", &versions_obj)) {
 			json_object_put(jobj);
-			json_object_put(latest_obj);
-			json_object_put(release_obj);
 			return false;
 		}
 
 		for (size_t i=0; i < json_object_array_length(versions_obj); i++) {
 			latest_obj = json_object_array_get_idx(versions_obj, i);
-			json_object_put(release_obj);
 			json_object_object_get_ex(latest_obj, "id", &release_obj);
 			if (strcmp(vers->id, json_object_get_string(release_obj)) == 0) {
 				version_len = json_object_get_string_len(release_obj);
@@ -89,9 +85,7 @@ bool parse_version(char* input, Version *vers) {
 				break;
 			}
 		}
-		json_object_put(versions_obj);
-		json_object_put(release_obj);
-		json_object_put(latest_obj);
+
 		json_object_put(jobj);
 		return true;
 }
