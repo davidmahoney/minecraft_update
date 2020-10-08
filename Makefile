@@ -1,12 +1,12 @@
 CC=cc
-CFLAGS=-I/usr/local/include -g -Wall -O2
+CFLAGS=-I/usr/local/include -g -Wall -O1 -std=c11
 LDFLAGS=-L/usr/local/lib -lc -lcurl -ljson-c
 DEPS = versions.h
 OBJ = main.o versions.o update.o
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	LDFLAGS := -L/usr/lib/x86_64-linux-gnu -lc -lcurl -ljson-c
-	CFLAGS := -g -Wall
+	CFLAGS := -g -Wall -O1 -std=c99 -D _GNU_SOURCE
 endif
 
 .o:	
