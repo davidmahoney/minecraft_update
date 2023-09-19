@@ -239,7 +239,7 @@ int get_current_version(char ** version) {
 			}
 		}
 		/* readlink doesn't append the null byte to the end of the string */
-		real_server_file[size + 1] = '\0';
+		real_server_file[size] = '\0';
 		start = strchr(real_server_file, '.') + 1;
 		end = strrchr(start, '.');
 		/* if not enough dots (.) are found return version 0 */
@@ -248,7 +248,9 @@ int get_current_version(char ** version) {
 				strncpy(*version, "0", 2);
 		}
 		else {
-				*version = realloc(*version, end - start + 1);
+				size_t len = end - start + 1;
+				*version = realloc(*version, len);
+				(*version)[len - 1] = '\0';
 				strncpy(*version, start, end - start);
 		}
 		return 0;
@@ -274,6 +276,22 @@ int compare_versions(const char *version1, const char *version2) {
 
 	if (version_number1 > version_number2) {
 		return 1;
+	}
+
+	if (version_number1 < version_number2) {
+		return -1;
+	}
+
+	if (version_number1 == version_number2) {
+		if (*end1 == '\0' && *end2 == '\0') {
+			return 0;
+		}
+		if (*end1 == '\0') {
+			return -1;
+		}
+		else {
+			return 1;
+		}
 	}
 
 	return -1;
