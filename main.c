@@ -51,7 +51,11 @@ int main(int argc, char *argv[]) {
 	if (current_ver == NULL || compare_versions(latest_ver.id, current_ver) > 0 ) { 
 			/* should update */
 		char * filename = NULL;
-		asprintf(&filename, "%s%s.jar", SERVER_FILE, latest_ver.id);
+		if (asprintf(&filename, "%s%s.jar", SERVER_FILE, latest_ver.id) < 0)
+		{
+			puts("Memory error");
+			return 2;
+		}
 		
 		if (latest_ver.download_url == NULL) {
 			puts("No download URL!\n");
